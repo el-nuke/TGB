@@ -20,21 +20,28 @@ class city{
         void addNeighbour(city* nb) {
             neighborCities.push_back(nb);
         }
+
+        const list<city*>& getNeighbours() const {
+        return neighborCities;
+    }
 };
 
-class Graph {
+class graph {
     public:
         list<city> cities;
 
+        //Adds a city
         void addCity(const string& cityName) {
             cities.emplace_back(cityName);
         }
 
+        //Connects two existing cities
         void connectCities(city* city1, city* city2) {
             city1->addNeighbour(city2);
             city2->addNeighbour(city1);
         }
 
+        //Prints every city and its neighbors
         void printCityAndNeighbours() {
         for (const auto& city : cities) {
             cout << city.name << " is connected to: ";
@@ -95,7 +102,7 @@ class guardian{
 };
 
 int main(){
-    Graph theGuardianWorld;
+    graph theGuardianWorld;
     list<guardian> allGuardians;
 
     city testCity = city("TIS WORKING YO");
@@ -117,19 +124,48 @@ int main(){
         while (fgets(line, 200, file) != NULL)
         {
             char *token;
-            token = strtok(line, ",");
+            token = strtok(line, ", ");
             
-            string name;
-            name = token;
+            string city1 = token;
+            bool found1 = false;
+            
 
-            theGuardianWorld.addCity(name);
-            cout << "loaded city" << endl;
+            string city2 = strtok(NULL, ",");
+            bool found2 = false;
+            
+
+            //Check through the list if either city already exists
+            for (const auto& city : theGuardianWorld.cities) {
+                if(city.name == city1){found1 = true;}
+                if(city.name == city2){found2 = true;}
+            }
+
+            //If they dont exist, create and add that city
+            if (!found1){theGuardianWorld.addCity(city1);}
+            if (!found2){theGuardianWorld.addCity(city2);}
+
+            //check through the list once again to get pointers for easier access later
+            const city* cityPointer = nullptr;
+            const city* cityPointer2 = nullptr;
+            for (const auto& city : theGuardianWorld.cities) {
+                if(city.name == city1){cityPointer = &city;}
+                if(city.name == city2){cityPointer2 = &city;}
+            }
+
+            //check neighbouring cities of city for a connection to city2
+            bool foundconnection = false;
+            for (const auto& city : cityPointer->neighborCities) {
+                if (city->name == city2){foundconnection = true;}
+            }
+            if (!foundconnection){
+                theGuardianWorld.connectCities(const_cast<city*>(cityPointer), const_cast<city*>(cityPointer2));;
+            }
         }
         fclose(file);
     }
 
 
-    FILE *file = fopen("guardians.conf", "r");
+    file = fopen("guardians.conf", "r");
     if (file == NULL) {
         perror("\nCouldnt find 'guardians.conf' \n");
         return 1;
