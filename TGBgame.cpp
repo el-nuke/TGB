@@ -1,14 +1,58 @@
 #include <iostream>
 #include <list>
 #include <string>
+#include <string.h>
 #include <vector>
 using namespace std;
+
+class city{
+    public:
+        string name;
+        list<city*> neighborCities;
+
+        city(string inName){
+            name = inName;
+        }
+
+        string getName(){return name;}
+        void setName(string inName){name = inName;}
+
+        void addNeighbour(city* nb) {
+            neighborCities.push_back(nb);
+        }
+};
+
+class Graph {
+    public:
+        list<city> cities;
+
+        void addCity(const string& cityName) {
+            cities.emplace_back(cityName);
+        }
+
+        void connectCities(city* city1, city* city2) {
+            city1->addNeighbour(city2);
+            city2->addNeighbour(city1);
+        }
+
+        void printCityAndNeighbours() {
+        for (const auto& city : cities) {
+            cout << city.name << " is connected to: ";
+            for (const auto& neighbour : city.neighborCities) {
+                cout << neighbour->name << " ";
+            }
+            cout << endl;
+        }
+    }
+};
 
 class guardian{
     private:
         string name;
         int powerlvl;
-        guardian * master; //if null, is master.
+        city *home; //points to their home city
+        list <guardian> apprentices; //stores pointers to its apprentices
+        guardian *master; //points to its master
 
     public:
         string getName(){return name;}
@@ -20,12 +64,16 @@ class guardian{
         guardian* getMaster(){return master;}
         void setMaster(guardian newMaster){*master = newMaster;}
 
+        city* getCity(){return home;}
+        void setCity(city newCity){*home = newCity;}
+
         void printData(){
             cout << "Name: " << name << endl;
             cout << "Power lvl: " << powerlvl << endl;
             cout << "Master: ";
             if (master != nullptr){cout << master->getName() << endl;}
             else {cout << "No master" << endl;}
+            cout << "City: " << home->getName() << endl;
         }
         
         guardian(string inname, int inpwr){
@@ -34,30 +82,86 @@ class guardian{
             master = nullptr;
         };
         
-        guardian(string inname, int inpwr, guardian* inmaster){
-            name = inname;
-            powerlvl = inpwr;
-            master = inmaster;
-        };      
-};
+        guardian(string inName, int inPwr, guardian *inMaster, city *inHome){
+            name = inName;
+            powerlvl = inPwr;
+            master = inMaster;
+            home = inHome;
+        };
 
-class city{
-    list<guardian> CitysGuardians;
+        ~guardian(){
+            delete master;
+        }
 };
 
 int main(){
+    Graph theGuardianWorld;
+    list<guardian> allGuardians;
+
+    city testCity = city("TIS WORKING YO");
     
-    guardian defaultmasterguardian = guardian("SHADOW WIZARD", 100);
-    cout << "1st guardian created" << endl;
-    guardian apprenticeguardian = guardian("", 96, &defaultmasterguardian);
-    cout << "2nd guardian created" << endl;
+    guardian masterguardian = guardian("MASTER WIZARD", 100, nullptr, &testCity);
+    cout << "test guardian created" << endl;
+    //guardian apprenticeguardian = guardian("random dude", 96, &masterguardian, &testCity);
+    //cout << "2nd guardian created" << endl;
+
+    
+    FILE *file = fopen("cities.conf", "r");
+    if (file == NULL) {
+        perror("\nCouldnt find 'cities.conf' \n");
+        return 1;
+    }else{        
+        cout << "\nFound 'cities.conf' to load cities from!" << endl;
+        
+        char line[100];        
+        while (fgets(line, 200, file) != NULL)
+        {
+            char *token;
+            token = strtok(line, ",");
+            
+            string name;
+            name = token;
+
+            theGuardianWorld.addCity(name);
+            cout << "loaded city" << endl;
+        }
+        fclose(file);
+    }
+
+
+    FILE *file = fopen("guardians.conf", "r");
+    if (file == NULL) {
+        perror("\nCouldnt find 'guardians.conf' \n");
+        return 1;
+    }else{        
+        cout << "\nFound 'guardians.conf' to load guardians from!" << endl;
+        
+        char line[100];        
+        while (fgets(line, 200, file) != NULL)
+        {
+            char *token;
+            token = strtok(line, ",");
+            
+            string name;
+            name = token;
+
+            int power = atoi(strtok(NULL, ","));
+        
+            string master = strtok(NULL, ",");
+
+            string city = strtok(NULL, ",");
+
+            allGuardians.push_back(guardian(name, power, &masterguardian, &testCity));
+        }
+        fclose(file);
+    }
 
     bool loop=true;
     do{
         string strinput;
 
-        cout << "enter 1 to leave" << endl;
-        cout << "enter 2 to print guardians' data" << endl;
+        cout << "\nenter 1 to leave" << endl;
+        cout << "enter 2 to print test guardians' data" << endl;
         cin >> strinput;
         int input = stoi(strinput);
         
@@ -70,10 +174,7 @@ int main(){
             break;
 
         case 2:
-            defaultmasterguardian.printData();
-            cout<<"---"<<endl;
-            apprenticeguardian.printData();
-
+            masterguardian.printData();
             break;
         
         default:
